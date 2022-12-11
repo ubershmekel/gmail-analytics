@@ -125,3 +125,4 @@ tags
 !.vscode/extensions.json
 
 # End of https://www.gitignore.io/api/emacs,vim,visualstudiocode,node
+*.zip
