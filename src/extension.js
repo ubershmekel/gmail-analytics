@@ -45,6 +45,52 @@ function insertAfter(newNode, existingNode) {
     existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
 }
 
+let lastSummary = '';
+
+function updateUI(counter) {
+    const topSenderList = sortCounter(counter);
+    const topSenderEmail = topSenderList[0][0];
+    const topSenderCount = topSenderList[0][1];
+    // console.log(topSender, topSenderCount);
+
+    const summary = `${topSenderCount} emails from ${topSenderEmail}`;
+    if (summary === lastSummary) {
+        // Avoid thrashing the UI element, so that you can edit
+        // the CSS without it flickering in the inspector.
+        return;
+    }
+    const elementId = "gmail-analytics-widget";
+    const existingEl = document.getElementById(elementId);
+    const newEl = document.createElement("span");
+    newEl.id = elementId;
+    newEl.appendChild(document.createTextNode(`${topSenderCount} emails from `));
+
+    const link = document.createElement("a");
+    link.href = "#search/from: " + topSenderEmail;
+    link.appendChild(document.createTextNode(topSenderEmail));
+    newEl.appendChild(link);
+
+    let didUpdate = false;
+    if (existingEl) {
+        // replace existing
+        existingEl.parentNode.replaceChild(newEl, existingEl);
+        didUpdate = true;
+    } else {
+        // insert new
+        const searchBarEl = gmail.dom.search_bar();
+        if (!searchBarEl) {
+            console.log("search bar not found");
+            return;
+        }
+        insertAfter(newEl, gmail.dom.search_bar()[0].parentNode.parentNode);
+        didUpdate = true;
+    }
+
+    if (didUpdate) {
+        lastSummary = summary;
+    }
+}
+
 function getTopMessages() {
     const counter = {};
     gmail.dom.visible_messages().map((it) => {
@@ -54,33 +100,6 @@ function getTopMessages() {
         }
         counter[sender] = counter[sender] + 1;
     });
-    const topSenderList = sortCounter(counter);
-    const topSenderEmail = topSenderList[0][0];
-    const topSenderCount = topSenderList[0][1];
-    // console.log(topSender, topSenderCount);
 
-    const elementId = "gmail-analytics-widget";
-    const existingEl = document.getElementById(elementId);
-    const newEl = document.createElement("span");
-    newEl.id = elementId;
-    newEl.appendChild(document.createTextNode(`${topSenderCount} emails from`));
-
-    const link = document.createElement("a");
-    link.href = "#search/from: " + topSenderEmail;
-    link.appendChild(document.createTextNode(topSenderEmail));
-    newEl.appendChild(link);
-
-    if (existingEl) {
-        // replace existing
-        existingEl.parentNode.replaceChild(newEl, existingEl);
-    } else {
-        // insert new
-        const searchBarEl = gmail.dom.search_bar();
-        if (!searchBarEl) {
-            console.log("search bar not found");
-            return;
-        }
-        insertAfter(newEl, gmail.dom.search_bar()[0].parentNode.parentNode);
-    }
-
+    updateUI(counter);
 }
